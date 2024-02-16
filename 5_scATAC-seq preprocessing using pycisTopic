@@ -1,0 +1,6 @@
+# Then open cluster and type in the following
+
+cd /temp_work/ch250798/Scenic
+sbatch run_AFmultiome_3.sh
+
+This will take off the rest of the work.
