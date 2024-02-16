@@ -1,0 +1,20 @@
+#To get start, you need to log in to the cluster with your username and pw and get memory and resources allocated
+srun -A bch -p bch-compute --mem=200GB --pty /bin/bash 
+
+#Then open installation documnetaions https://scenicplus.readthedocs.io/en/latest/install.html
+
+#you will need more memory in the working directory. so go to your /temp_work/ch250798/Scenic 
+
+git clone https://github.com/aertslab/scenicplus
+cd scenicplus
+pip install -e .
+
+# In case it ran in to a problem; likely because of pycisTopic, so install pycisTopic v.1.0.1 and follow Janusry 31st release 2024 https://github.com/aertslab/pycisTopic/releases
+# to install,
+
+git clone https://github.com/aertslab/pycisTopic.git
+cd pycisTopic
+pip install -e .
+
+#Then you need to install jupyter notebook; for this: 
+#                                                   https://github.com/laki-spk/Installing-anaconda-jupyter-notebook/blob/main/cluster
