@@ -1,0 +1,4 @@
+import dill
+menr = dill.load(open(os.path.join(work_dir, 'motifs/menr.pkl'), 'rb'))
+
+menr['DEM_topics_otsu_All'].DEM_results('Topic8')
