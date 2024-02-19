@@ -1,3 +1,13 @@
+##  Type in the following and run on Jupyter notebook; or else; you can complie everything to one .py file as (uploaded here in motif.py) and ask cluster to run run_AFmultiome_2.sh
+
+# If running in cluster 
+ srun -A bch -p bch-compute --mem=100GB --pty /bin/bash 
+cd /temp_work/ch250798/Scenic     
+sbatch run_AFmultiome_2.sh
+
+# if running in Jupyter notebook type in the following;  might take a while. 
+
+
 import pickle
 
 import warnings
@@ -54,7 +64,7 @@ scores_db =  os.path.join(db_fpath, 'hg38_screen_v10_clust.regions_vs_motifs.sco
 motif_annotation = os.path.join(motif_annot_fpath, 'motifs-v10nr_clust-nr.hgnc-m0.001-o0.0.tbl')
 
 
-
+# to check excistance of the filies>>
 print(rankings_db, os.path.isfile(rankings_db))
 print(scores_db, os.path.isfile(scores_db))
 print(motif_annotation, os.path.isfile(motif_annotation))
@@ -80,6 +90,9 @@ run_pycistarget(
     _temp_dir = os.path.join(tmp_dir, 'ray_spill'),
     annotation_version = 'v10nr_clust',
     )
+
+
+
 
 
 
