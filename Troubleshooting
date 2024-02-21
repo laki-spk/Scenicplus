@@ -1,0 +1,3 @@
+# when you get an error called EOFError: marshal data too short scenicplus
+find . -name \*.pyc -delete            # delete all .pyc files
+
