@@ -1,0 +1,124 @@
+# To run SCENIC+: Inference of enhancer driven GRNs run another .py file with . sh file.
+
+# make sure you have following files;
+
+!wget -O pbmc_tutorial/data/utoronto_human_tfs_v_1.01.txt  http://humantfs.ccbr.utoronto.ca/download/v_1.01/TF_names_v_1.01.txt
+
+!wget -O pbmc_tutorial/bedToBigBed http://hgdownload.soe.ucsc.edu/admin/exe/linux.x86_64/bedToBigBed
+
+!chmod +x pbmc_tutorial/bedToBigBed
+
+
+# for the .py file type in the following;
+
+import dill
+import scanpy as sc
+import os
+import warnings
+warnings.filterwarnings("ignore")
+import pandas
+import pyranges
+# Set stderr to null to avoid strange messages from ray
+import sys
+_stderr = sys.stderr
+null = open(os.devnull,'wb')
+work_dir = 'pbmc_tutorial'
+tmp_dir = '/temp_work/ch250798/Scenic/tmp/'
+
+adata = sc.read_h5ad(os.path.join(work_dir, 'scRNA/adata.h5ad'))
+cistopic_obj = dill.load(open(os.path.join(work_dir, 'scATAC/cistopic_obj.pkl'), 'rb'))
+menr = dill.load(open(os.path.join(work_dir, 'motifs/menr.pkl'), 'rb'))
+
+from scenicplus.scenicplus_class import create_SCENICPLUS_object
+import numpy as np
+scplus_obj = create_SCENICPLUS_object(
+    GEX_anndata = adata.raw.to_adata(),
+    cisTopic_obj = cistopic_obj,
+    menr = menr,
+    bc_transform_func = lambda x: f'{x}-10x_pbmc')
+
+scplus_obj.X_EXP = np.array(scplus_obj.X_EXP.todense())
+scplus_obj
+
+biomart_host = "http://sep2019.archive.ensembl.org/"
+
+#only keep the first two columns of the PCA embedding in order to be able to visualize this in SCope
+scplus_obj.dr_cell['GEX_X_pca'] = scplus_obj.dr_cell['GEX_X_pca'].iloc[:, 0:2]
+scplus_obj.dr_cell['GEX_rep'] = scplus_obj.dr_cell['GEX_rep'].iloc[:, 0:2]
+
+from scenicplus.wrappers.run_scenicplus import run_scenicplus
+try:
+    run_scenicplus(
+        scplus_obj = scplus_obj,
+        variable = ['GEX_celltype'],
+        species = 'hsapiens',
+        assembly = 'hg38',
+        tf_file = 'pbmc_tutorial/data/utoronto_human_tfs_v_1.01.txt',
+        save_path = os.path.join(work_dir, 'scenicplus'),
+        biomart_host = biomart_host,
+        upstream = [1000, 150000],
+        downstream = [1000, 150000],
+        calculate_TF_eGRN_correlation = True,
+        calculate_DEGs_DARs = True,
+        export_to_loom_file = True,
+        export_to_UCSC_file = True,
+        path_bedToBigBed = 'pbmc_tutorial',
+        n_cpu = 12,
+        _temp_dir = os.path.join(tmp_dir, 'ray_spill'))
+except Exception as e:
+    #in case of failure, still save the object
+    dill.dump(scplus_obj, open(os.path.join(work_dir, 'scenicplus/scplus_obj.pkl'), 'wb'), protocol=-1)
+    raise(e)
+
+# save .py file >>> Also the uploaded scenic.py file
+
+# edit .sh file accordingly >>> run_multiome1.sh
+
+#if installed newly from scenicplus and haven't edited the following files before make sure to edit them as shown below; 
+
+src/scenicplus/dimensionality_reduction.py
+
+@@ -368,7 +368,7 @@ def run_eRegulons_pca(scplus_obj: SCENICPLUS,
+    dr = pd.DataFrame(
+        embedding,
+        index=data_names,
+        columns=[f'PC_{i}' for i in range(n_pcs)])[['PC_0', 'PC_1']]   # delete this line
+        columns=[f'PC_{i}' for i in range(n_pcs)])                     # add this line instead the above line
+    if not hasattr(scplus_obj, 'dr_cell'):
+        scplus_obj.dr_cell = {}
+    scplus_obj.dr_cell[reduction_name] = dr
+def plot_metadata_given_ax(scplus_obj,
+                  ax: matplotlib.axes,
+                  reduction_name: str,
+                  variable: str,
+                  remove_nan: Optional[bool] = True,
+                  show_label: Optional[bool] = True,
+                  show_legend: Optional[bool] = False,
+                  cmap: Optional[Union[str, 'matplotlib.cm']] = cm.viridis,
+                  dot_size: Optional[int] = 10,
+                  text_size: Optional[int] = 10,
+                  alpha: Optional[Union[float, int]] = 1,
+                  seed: Optional[int] = 555,
+                  color_dictionary: Optional[Dict[str, str]] = {},
+                  selected_cells: Optional[List[str]] = None):
+    """
+    Plot categorical and continuous metadata into dimensionality reduction.
+    Parameters
+    ---------
+
+
+
+src/scenicplus/loom.py
+
+@@ -196,6 +196,10 @@ def export_to_loom(scplus_obj: SCENICPLUS,
+
+    # Embeddings. Cell embeddings in this case
+    embeddings = scplus_obj.dr_cell
+                                                                          # add this space line
+    #only keep first two dimensions of embedding                          # add this line
+    for key in embeddings.keys():                                         # add this line
+        embeddings[key] = embeddings[key][embeddings[key].columns[0:2]]    # add this line
+
+    # Add linked_gene information
+    if signature_key == 'Gene_based':
+
